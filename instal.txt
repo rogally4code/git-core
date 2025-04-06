@@ -1,0 +1,97 @@
+brew install postgresql@14
+brew services start postgresql@14
+brew install rabbitmq
+brew services start rabbitmq
+
+cd ~ && curl -L -o keycloak-23.0.0.tar.gz https://github.com/keycloak/keycloak/releases/download/23.0.0/keycloak-23.0.0.tar.gz
+tar xzf keycloak-23.0.0.tar.gz && cd keycloak-23.0.0
+bin/kc.sh start-dev
+bin/kc.sh start-dev --http-port=8180
+
+First, let's access the Keycloak Admin Console. Open your browser and go to:
+http://localhost:8080
+Log in with:
+Username: admin
+Password: admin
+Now, let's create the required configuration:
+Create a new realm:
+Click on the dropdown in the top-left corner (it should say "Master")
+Click "Create Realm"
+Name: core-banking
+Click "Create"
+Create the client:
+In the left sidebar, click "Clients"
+Click "Create client"
+Client ID: core-banking-client
+Client type: Confidential
+Click "Next"
+Enable "Service accounts enabled"
+Enable "Authorization enabled"
+Valid redirect URIs: http://localhost:8080/*
+Click "Save"
+Create the required roles:
+In the left sidebar, click "Realm roles"
+Click "Create role"
+Create these roles one by one:
+ADMIN
+USER
+TELLER
+Create a test user:
+In the left sidebar, click "Users"
+Click "Add user"
+Username: testuser
+Click "Create"
+Go to the "Credentials" tab
+Set a password (e.g., "test123")
+Turn off "Temporary" password option
+Click "Set Password"
+Go to the "Role mapping" tab
+Assign the USER role
+Get the client secret:
+Go to "Clients"
+Click on core-banking-client
+Go to the "Credentials" tab
+Copy the "Secret" value (we'll need this for the application configuration)
+
+
+he application is running, but we need to create a test user in Keycloak to verify that everything is working correctly. Let's go back to Keycloak and create a test user:
+Open Keycloak Admin Console at http://localhost:8080
+Log in with:
+Username: admin
+Password: admin
+Select the "core-banking" realm
+Go to "Users" in the left sidebar
+Click "Add user"
+Fill in:
+Username: testuser
+Email: testuser@example.com
+First Name: Test
+Last Name: User
+Click "Create"
+Go to the "Credentials" tab
+Set password:
+Password: test123
+Password confirmation: test123
+Temporary: OFF
+Click "Set password"
+Go to "Role Mapping" tab
+Click "Assign role"
+Select "USER" role
+Click "Assign"
+Now you can try to get a token using this test user:
+curl -X POST http://localhost:8080/realms/core-banking/protocol/openid-connect/token -d "grant_type=password&client_id=core-banking-client&username=testuser&password=test123" -H "Content-Type: application/x-www-form-urlencoded"
+
+I see we need to add the client secret to the token request. Let's get the client secret from Keycloak:
+Go to the Keycloak Admin Console
+Select the "core-banking" realm
+Go to "Clients" in the left sidebar
+Click on "core-banking-client"
+Go to the "Credentials" tab
+Copy the client secret
+Then try the token request again with the client secret:
+curl -X POST http://localhost:8080/realms/core-banking/protocol/openid-connect/token -d "grant_type=password&client_id=core-banking-client&client_secret=YOUR_CLIENT_SECRET&username=testuser&password=test123" -H "Content-Type: application/x-www-form-urlencoded"
+
+
+curl http://localhost:8080/swagger-ui.html
+
+http://localhost:8080/actuator/health
